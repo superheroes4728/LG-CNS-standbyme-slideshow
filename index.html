@@ -33,7 +33,7 @@
         height: 100%;
         object-fit: contain;
         opacity: 0;
-        transition: opacity 1.2s ease-in-out;
+        transition: opacity 350ms ease-out;
         background: #000;
       }
 
@@ -267,6 +267,13 @@
         }, 1800);
       }
 
+      function preloadImages() {
+        images.forEach((src) => {
+          const image = new Image();
+          image.src = src;
+        });
+      }
+
       async function loadImageList() {
         try {
           const response = await fetch(`screens/${screen}/list.json?ts=${Date.now()}`, {
@@ -288,6 +295,7 @@
           images = newImages;
           showStatus(`${screen}: ${images.length}개 이미지 로드됨`);
           renderIndicators();
+          preloadImages();
 
           if (!imgA.src && !imgB.src) {
             imgA.src = images[0];
