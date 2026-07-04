@@ -192,8 +192,7 @@
           clearInterval(slideTimer);
         }
 
-        resetSlideTimer();
-        document.addEventListener("click", handleStageClick);
+        slideTimer = setInterval(nextSlide, CONFIG.slideSeconds * 1000);
       }
 
       function handleStageClick(event) {
@@ -211,7 +210,8 @@
       async function start() {
         await loadImageList();
 
-        slideTimer = setInterval(nextSlide, CONFIG.slideSeconds * 1000);
+        resetSlideTimer();
+        document.addEventListener("click", handleStageClick);
         setInterval(loadImageList, CONFIG.refreshMinutes * 60 * 1000);
         setTimeout(() => {
           window.location.reload();
