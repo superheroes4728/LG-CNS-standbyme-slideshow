@@ -157,10 +157,10 @@
         }
       }
 
-      function nextSlide() {
+      function showSlide(index) {
         if (images.length === 0) return;
 
-        currentIndex = (currentIndex + 1) % images.length;
+        currentIndex = (index + images.length) % images.length;
         const nextUrl = images[currentIndex];
 
         const currentImg = showingA ? imgA : imgB;
@@ -177,6 +177,35 @@
         };
 
         nextImg.src = nextUrl;
+      }
+
+      function nextSlide() {
+        showSlide(currentIndex + 1);
+      }
+
+      function prevSlide() {
+        showSlide(currentIndex - 1);
+      }
+
+      function resetSlideTimer() {
+        if (slideTimer) {
+          clearInterval(slideTimer);
+        }
+
+        resetSlideTimer();
+        document.addEventListener("click", handleStageClick);
+      }
+
+      function handleStageClick(event) {
+        if (images.length <= 1) return;
+
+        if (event.clientX < window.innerWidth / 2) {
+          prevSlide();
+        } else {
+          nextSlide();
+        }
+
+        resetSlideTimer();
       }
 
       async function start() {
