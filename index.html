@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>StandbyME Slideshow</title>
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+
+      #stage {
+        position: fixed;
+        inset: 0;
+        background: #000;
+      }
+
+      .slide {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0;
+        transition: opacity 1.2s ease-in-out;
+        background: #000;
+      }
+
+      .slide.active {
+        opacity: 1;
+      }
+
+      #status {
+        position: fixed;
+        left: 20px;
+        bottom: 20px;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 18px;
+        line-height: 1.4;
+        z-index: 10;
+        display: none;
+      }
+
+      #status.show {
+        display: block;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="stage">
+      <img
+        id="imgA"
+        class="slide active"
+      />
+      <img
+        id="imgB"
+        class="slide"
+      />
+    </div>
+
+    <div id="status"></div>
+
+    <script>
+      const CONFIG = {
+        // 사진 넘어가는 시간
+        slideSeconds: 30,
+
+        // list.json이 바뀌었는지 다시 확인하는 시간
+        refreshMinutes: 10,
+
+        // 상시 운영 안정성을 위한 전체 페이지 새로고침 시간
+        pageReloadHours: 6,
+
+        // 이미지 맞춤 방식
+        // contain = 전체 이미지 보이게
+        // cover = 화면 꽉 채우되 일부 잘릴 수 있음
+        fit: "contain",
+      };
+
+      const params = new URLSearchParams(window.location.search);
+      const screenParam = params.get("screen") || "screen1";
+      const screen = screenParam.startsWith("screen") ? screenParam : `screen${screenParam}`;
+
+      const imgA = document.getElementById("imgA");
+      const imgB = document.getElementById("imgB");
+      const statusEl = document.getElementById("status");
+
+      imgA.style.objectFit = CONFIG.fit;
+      imgB.style.objectFit = CONFIG.fit;
+
+      let images = [];
+      let currentIndex = 0;
+      let showingA = true;
+      let slideTimer = null;
+
+      function showStatus(message, force = false) {
+        statusEl.innerHTML = message;
+        statusEl.className = force ? "show" : "";
+        console.log(message);
+      }
+
+      function getImageUrl(filename) {
+        return `screens/${screen}/${filename}`;
+      }
+
+      function normalizeList(filenames) {
+        if (!Array.isArray(filenames)) {
+          return [];
+        }
+
+        return filenames
+          .filter((filename) => typeof filename === "string")
+          .map((filename) => filename.trim())
+          .filter((filename) => filename.length > 0)
+          .filter((filename) => !filename.includes("..") && !filename.startsWith("/"));
+      }
+
+      async function loadImageList() {
+        try {
+          const response = await fetch(`screens/${screen}/list.json?ts=${Date.now()}`, {
+            cache: "no-store",
+          });
+
+          if (!response.ok) {
+            throw new Error(`list.json을 불러오지 못함: ${response.status}`);
+          }
+
+          const filenames = normalizeList(await response.json());
+          const newImages = filenames.map(getImageUrl);
+
+          if (newImages.length === 0) {
+            showStatus(`이미지 목록이 비어 있습니다.<br>확인: screens/${screen}/list.json`, true);
+            return;
+          }
+
+          images = newImages;
+          showStatus(`${screen}: ${images.length}개 이미지 로드됨`);
+
+          if (!imgA.src && !imgB.src) {
+            imgA.src = images[0];
+            currentIndex = 0;
+          }
+        } catch (error) {
+          showStatus(`에러 발생<br>${error.message}<br>screen 이름과 list.json 파일 확인`, true);
+        }
+      }
+
+      function nextSlide() {
+        if (images.length === 0) return;
+
+        currentIndex = (currentIndex + 1) % images.length;
+        const nextUrl = images[currentIndex];
+
+        const currentImg = showingA ? imgA : imgB;
+        const nextImg = showingA ? imgB : imgA;
+
+        nextImg.onload = () => {
+          nextImg.classList.add("active");
+          currentImg.classList.remove("active");
+          showingA = !showingA;
+        };
+
+        nextImg.onerror = () => {
+          showStatus(`이미지를 불러오지 못했습니다.<br>${nextUrl}`, true);
+        };
+
+        nextImg.src = nextUrl;
+      }
+
+      async function start() {
+        await loadImageList();
+
+        slideTimer = setInterval(nextSlide, CONFIG.slideSeconds * 1000);
+        setInterval(loadImageList, CONFIG.refreshMinutes * 60 * 1000);
+        setTimeout(() => {
+          window.location.reload();
+        }, CONFIG.pageReloadHours * 60 * 60 * 1000);
+      }
+
+      start();
+    </script>
+  </body>
+</html>
