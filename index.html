@@ -60,10 +60,14 @@
         position: fixed;
         top: 50%;
         z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: 88px;
         height: 132px;
         border: 0;
         border-radius: 8px;
+        padding: 0;
         background: rgba(0, 0, 0, 0.34);
         color: rgba(255, 255, 255, 0.88);
         cursor: pointer;
@@ -73,6 +77,13 @@
         transform: translateY(-50%);
         transition: opacity 180ms ease, background 180ms ease;
         -webkit-tap-highlight-color: transparent;
+      }
+
+      .nav-arrow {
+        display: block;
+        height: 1em;
+        line-height: 0.82;
+        transform: translateY(-0.03em);
       }
 
       .nav-button.show,
@@ -143,7 +154,7 @@
       type="button"
       aria-label="이전 이미지"
     >
-      ‹
+      <span class="nav-arrow">‹</span>
     </button>
     <button
       id="nextButton"
@@ -151,7 +162,7 @@
       type="button"
       aria-label="다음 이미지"
     >
-      ›
+      <span class="nav-arrow">›</span>
     </button>
     <div
       id="indicators"
